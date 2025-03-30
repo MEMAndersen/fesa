@@ -1,0 +1,19 @@
+[project]
+name = "fesa"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cvxpy>=1.6.4",
+]
+
+[project.optional-dependencies]
+mosek = [
+    "mosek>=11.0.13",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.2",
+]
