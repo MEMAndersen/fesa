@@ -3,7 +3,9 @@ Example of Reinforced Concrete material point in 2D with orthogonal reinforcemen
 """
 
 # Import packages.
+from typing import Sequence
 import cvxpy as cp
+from cvxpy.constraints.zero import Equality
 import numpy as np
 
 
@@ -16,19 +18,9 @@ def main(sigma: list[float], sigma_0: list[float]) -> None:
             f"Wrong input for sigma_0, length should be 3, was {len(sigma_0)}"
         )
 
-    sigma_tensor = np.array(
-        [
-            [sigma[0], sigma[2]],
-            [sigma[2], sigma[1]],
-        ]
-    )
+    sigma_load = np.array(sigma)
 
-    sigma_0_tensor = np.array(
-        [
-            [sigma_0[0], sigma_0[2]],
-            [sigma_0[2], sigma_0[1]],
-        ]
-    )
+    sigma_0_load = np.array(sigma_0)
 
     # Define variables
     k = 4.0
@@ -51,14 +43,14 @@ def main(sigma: list[float], sigma_0: list[float]) -> None:
     soc_vars = cp.Variable(3)
 
     # Constraints
-    stress_equality = load_factor * sigma_tensor + sigma_0_tensor == s_t
+    stress_equality = load_factor * sigma_load + sigma_0_load == s_t
     stress_decomposition_constraint = s_t == s_c + s_s
 
     ## Concrete
     s_i_eq = s_i == c + r
     s_ii_eq = s_ii == c - r
     c_eq = c == 0.5 * (s_c[0, 0] + s_c[1, 1])
-    soc_eqs = [
+    soc_eqs: Sequence[Equality | cp.SOC] = [
         soc_vars[0] == r,
         soc_vars[1] == 0.5 * (s_c[0, 0] - s_c[1, 1]),
         soc_vars[2] == s_c[0, 1],
@@ -80,21 +72,22 @@ def main(sigma: list[float], sigma_0: list[float]) -> None:
     objective = cp.Maximize(load_factor)
 
     # Create and solve problem
+    constraints: Sequence[cp.Constraint] = [
+        stress_equality,
+        stress_decomposition_constraint,
+        s_i_eq,
+        s_ii_eq,
+        c_eq,
+        mohr_1,
+        mohr_2,
+        mohr_3,
+        s_lin_ineq_low,
+        s_lin_ineq_high,
+    ] + soc_eqs
+
     prob = cp.Problem(
         objective=objective,
-        constraints=[
-            stress_equality,
-            stress_decomposition_constraint,
-            s_i_eq,
-            s_ii_eq,
-            c_eq,
-            mohr_1,
-            mohr_2,
-            mohr_3,
-            s_lin_ineq_low,
-            s_lin_ineq_high,
-        ]
-        + soc_eqs,
+        constraints=constraints,
     )
     prob.solve(verbose=True, solver="MOSEK")
 
@@ -103,13 +96,13 @@ def main(sigma: list[float], sigma_0: list[float]) -> None:
     print(f"S_t = \n{s_t.value}")
     print(f"S_c = \n{s_c.value}")
     print(f"S_s = \n{s_s.value}")
-    print(load_factor.value * sigma_tensor + sigma_0_tensor, "\n=\n", s_t.value)
+    print(load_factor.value * sigma_load + sigma_0_load, "\n=\n", s_t.value)
     print(f"sii = \n{s_ii.value}")
     print(f"si = \n{s_i.value}")
 
 
 if __name__ == "__main__":
-    sigma = [0, 0, 1]
-    sigma_0 = [0, 0, 0]
+    sigma: list[float] = [-1, 0, 0, 0]
+    sigma_0: list[float] = [0, 0, 0]
 
-    main(sigma, sigma_0)
+    main(sigma=sigma, sigma_0=sigma_0)

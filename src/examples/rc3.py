@@ -1,5 +1,5 @@
 """
-Example of Reinforced Concrete material point in 3D with orthorgonal reinforcement in three directions (x-y-z).
+Example of Reinforced Concrete material point in 3D with orthogonal reinforcement in three directions (x-y-z).
 """
 
 # Import packages.
@@ -94,7 +94,7 @@ def main(sigma: list[float], sigma_0: list[float]) -> None:
 
 
 if __name__ == "__main__":
-    sigma = [-20, -20, -2, 0, 0, 0]
-    sigma_0 = [-10, 0, 0, 0, 0, 0]
+    sigma: list[float] = [-20, -20, -2, 0, 0, 0]
+    sigma_0: list[float] = [-10, 0, 0, 0, 0, 0]
 
-    main(sigma, sigma_0)
+    main(sigma=sigma, sigma_0=sigma_0)
