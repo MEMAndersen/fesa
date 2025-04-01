@@ -14,10 +14,10 @@ def principal_stress(sigma: Sequence[float]) -> tuple[float, float]:
     eigenvalues, eigenvectors = np.linalg.eig(sigma_t)
     eigenvalues.sort()
 
-    return float(eigenvalues[0]), float(eigenvalues[1])
+    return float(eigenvalues[1]), float(eigenvalues[0])
 
 
-def main(sigma_0: list[float]) -> float:
+def main(sigma_0: list[float]) -> tuple:
     if len(sigma_0) != 3:
         raise ValueError(
             f"Wrong input for sigma_0, length should be 3, was {len(sigma_0)}"
@@ -30,11 +30,11 @@ def main(sigma_0: list[float]) -> float:
     E_c = 35.0e3
     f_sy = 500.0
     E_s = 210.0e3
-    rho_x = 0.01
-    rho_y = 0.01
+    rho_x = 0.05
+    rho_y = 0.05
     G_c = 0.5 * E_c
-    k_c = 0.1
-    k_s = 0.1
+    k_c = 0.01
+    k_s = 0.01
 
     M_c = np.array(
         [
@@ -137,7 +137,8 @@ def main(sigma_0: list[float]) -> float:
     constraints.append(st == sc + cp.multiply(ss, np.array([rho_x, rho_y, 0])))
 
     ## Stress equilibrium
-    constraints.append(st == sigma_vector)
+    stress_equilibrium = st == sigma_vector
+    constraints.append(stress_equilibrium)
 
     ## elastic/hardening stress decomposition
     constraints.append(scxx == scxx_l + scxx_h)
@@ -213,47 +214,79 @@ def main(sigma_0: list[float]) -> float:
     prob.solve(verbose=False, solver="MOSEK")
 
     # Print result.
-    print("The optimal value is", prob.value)
-    print(f"st     = {st.value}")
-    print(f"sc     = {sc.value}")
-    print(f"ss*rho = {ss.value * [rho_x, rho_y, 0]}\n")
-
-    print(f"st1, st2 = {principal_stress(st.value)}")
-    print(f"sc1, sc2 = {principal_stress(sc.value)}")
-    print(f"ss1, ss2 = {principal_stress(ss.value)}\n")
-
     sc_l = [float(scxx_l.value), float(scyy_l.value), float(scxy_l.value)]
-    print(f"sc_l = {sc_l}")
-    print(f"sc_l1, sc_l2 = {principal_stress(sc_l)}\n")
-
     sc_h = [float(scxx_h.value), float(scyy_h.value), float(scxy_h.value)]
-    print(f"sc_h = {sc_h}")
-    print(f"sc_h1, sc_h2 = {principal_stress(sc_h)}\n")
 
-    print(f"scxx_lh = {scxx_lh.value}")
-    print(f"scyy_lh = {scyy_lh.value}")
-    print(f"scxy_lh = {scxy_lh.value}")
+    # print("The optimal value is", prob.value)
+    # print(f"st     = {st.value}")
+    # print(f"sc     = {sc.value}")
+    # print(f"ss*rho = {ss.value * [rho_x, rho_y, 0]}\n")
 
-    print(f"ssxx_lh = {ssxx_lh.value}")
-    print(f"ssyy_lh = {ssyy_lh.value}")
+    # print(f"st1, st2 = {principal_stress(st.value)}")
+    # print(f"sc1, sc2 = {principal_stress(sc.value)}")
+    # print(f"ss1, ss2 = {principal_stress(ss.value)}\n")
 
-    print(f"beta_all = {beta_all.value}")
+    # print(f"sc_l = {sc_l}")
+    # print(f"sc_l1, sc_l2 = {principal_stress(sc_l)}\n")
 
-    return float(prob.value)
+    # print(f"sc_h = {sc_h}")
+    # print(f"sc_h1, sc_h2 = {principal_stress(sc_h)}\n")
+
+    # print(f"scxx_lh = {scxx_lh.value}")
+    # print(f"scyy_lh = {scyy_lh.value}")
+    # print(f"scxy_lh = {scxy_lh.value}")
+
+    # print(f"ssxx_lh = {ssxx_lh.value}")
+    # print(f"ssyy_lh = {ssyy_lh.value}")
+
+    # print(f"beta_all = {beta_all.value}")
+
+    sc_I = principal_stress(sc_l)[0] + principal_stress(sc_h)[0]
+    ec_I = principal_stress(sc_l)[0] / E_c + principal_stress(sc_h)[0] / (E_c * k_c)
+
+    sc_II = principal_stress(sc_l)[1] + principal_stress(sc_h)[1]
+    ec_II = principal_stress(sc_l)[1] / E_c + principal_stress(sc_h)[1] / (E_c * k_c)
+
+    ss_xx = float(ssxx.value)
+    es_xx = float(ssxx_l.value / E_s + ssxx_h.value / (k_s * E_s))
+
+    ss_yy = float(ssyy.value)
+    es_yy = float(ssyy_l.value / E_s + ssyy_h.value / (k_s * E_s))
+
+    return (sc_I, ec_I, sc_II, ec_II, ss_xx, es_xx, ss_yy, es_yy)
 
 
 if __name__ == "__main__":
-    x: list[float] = []
-    y: list[float] = []
+    sig_Is = []
+    eps_Is = []
+    eps_IIs = []
+    sig_IIs = []
+    ss_xxs = []
+    es_xxs = []
+    ss_yys = []
+    es_yys = []
 
-    for i in range(100):
-        sigma_0: list[float] = [-i, -i, -i]
+    for i in np.linspace(start=-80, stop=80):
+        sigma_0: list[float] = [i, 0, 0]
         # sigma_0: list[float] = [0.5 * -i, 0.5 * -i, -0.1 * i]
 
-        obj = main(sigma_0=sigma_0)
+        (sig_I, eps_I, sig_II, eps_II, ss_xx, es_xx, ss_yy, es_yy) = main(
+            sigma_0=sigma_0
+        )
 
-        x.append(i)
-        y.append(obj)
+        sig_Is.append(sig_I)
+        eps_Is.append(eps_I)
+        eps_IIs.append(eps_II)
+        sig_IIs.append(sig_II)
+        ss_xxs.append(ss_xx)
+        es_xxs.append(es_xx)
+        ss_yys.append(ss_yy)
+        es_yys.append(es_yy)
 
-    plt.plot(x, y)
+    fig, axs = plt.subplots(2, 1)
+
+    axs[0].plot(eps_Is, sig_Is)
+    axs[0].plot(eps_IIs, sig_IIs)
+    axs[1].plot(es_xxs, ss_xxs)
+    axs[1].plot(es_yys, ss_yys)
     plt.show()
