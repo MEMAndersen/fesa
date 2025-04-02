@@ -104,10 +104,10 @@ def main(sigma_0: list[float]) -> tuple:
     abs_ss_h = cp.Variable(3)
 
     ## Concrete principal stresses
-    ps_l_i = cp.Variable(name="ss_l_i")
-    ps_l_ii = cp.Variable(name="ss_l_ii")
-    ps_h_i = cp.Variable(name="ss_h_i")
-    ps_h_ii = cp.Variable(name="ss_h_ii")
+    ps_l_i = cp.Variable(name="ps_l_i")
+    ps_l_ii = cp.Variable(name="ps_l_ii")
+    ps_h_i = cp.Variable(name="ps_h_i")
+    ps_h_ii = cp.Variable(name="ps_h_ii")
 
     ## Auxiliary
     alpha = cp.Variable()
@@ -116,7 +116,6 @@ def main(sigma_0: list[float]) -> tuple:
     beta_3 = cp.Variable(2)
     beta_4 = cp.Variable(2)
     beta_5 = cp.Variable(2)
-    beta_6 = cp.Variable(2)
 
     # constraints
     constraints: Sequence[cp.Constraint] = []
@@ -158,7 +157,7 @@ def main(sigma_0: list[float]) -> tuple:
     constraints.append(beta_3 == M_c @ cp.hstack([ps_l_ii, ps_h_ii]))
     constraints.append(beta_4 == M_sx @ cp.hstack([abs_ss_l[0], abs_ss_h[0]]))
     constraints.append(beta_5 == M_sy @ cp.hstack([abs_ss_l[1], abs_ss_h[1]]))
-    beta_all = cp.hstack([beta_2, beta_3, beta_4, beta_5, beta_6])
+    beta_all = cp.hstack([beta_2, beta_3, beta_4, beta_5])
     constraints.append(alpha >= cp.quad_over_lin(beta_all, 2))
 
     # Objective
