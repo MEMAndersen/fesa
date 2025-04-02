@@ -57,7 +57,6 @@ def main(sigma_0: list[float]) -> tuple:
     E_s = 210.0e3
     rho_x = 0.05
     rho_y = 0.05
-    G_c = 0.5 * E_c
     k_c = 0.01
     k_s = 0.01
 
