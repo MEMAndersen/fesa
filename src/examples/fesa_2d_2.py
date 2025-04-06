@@ -153,8 +153,8 @@ def main(sigma_0: list[float]) -> tuple:
     constraints.append(ss_l <= f_sy)
 
     ## Complimentary energy
-    constraints.append(beta_2 == M_c @ cp.hstack([ps_l_i, ps_h_i]))
-    constraints.append(beta_3 == M_c @ cp.hstack([ps_l_ii, ps_h_ii]))
+    constraints.append(beta_2 == M_c @ cp.hstack([-ps_l_i, -ps_h_i]))
+    constraints.append(beta_3 == M_c @ cp.hstack([-ps_l_ii, -ps_h_ii]))
     constraints.append(beta_4 == M_sx @ cp.hstack([abs_ss_l[0], abs_ss_h[0]]))
     constraints.append(beta_5 == M_sy @ cp.hstack([abs_ss_l[1], abs_ss_h[1]]))
     beta_all = cp.hstack([beta_2, beta_3, beta_4, beta_5])
