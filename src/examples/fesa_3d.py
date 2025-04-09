@@ -297,7 +297,7 @@ if __name__ == "__main__":
     mp_fesa.setup_variables()
     mp_fesa.define_constraints()
 
-    sigma_ext = list_2_tensor([-100, -100, -100, 0, 0, 0])
+    sigma_ext = list_2_tensor([-50, 0, 0, 0, 0, 0])
 
     # Create and solve problem
     total_equilibrium = sigma_ext == mp_fesa.sigma.tensor

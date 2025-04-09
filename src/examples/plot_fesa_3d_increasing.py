@@ -44,9 +44,11 @@ ps_iiis_h = []
 ss_ls = [[] for _ in range(nsr)]
 ss_hs = [[] for _ in range(nsr)]
 
-for i in tqdm(range(10000)):
-    sigma_ext_array: list[float] = (np.random.rand(6) * 70 - 35).tolist()  # type: ignore
-    sigma_ext = list_2_tensor(sigma_ext_array)
+# sigma_ext_array: list[float] = (np.random.rand(6) * 1 - 0.5).tolist()  # type: ignore
+sigma_ext_array: list[float] = [1, 0.00, 0.00, 0, 0, 0]
+
+for load_factor in tqdm(np.linspace(-220, 0, 1000)):
+    sigma_ext = list_2_tensor(sigma_ext_array) * load_factor
 
     # Create and solve problem
     total_equilibrium = sigma_ext == mp_fesa.sigma.tensor
@@ -99,8 +101,7 @@ for i in range(3):
     axs[i].plot(
         ps_ls[i] / E_c + ps_hs[i] / (E_c * kappa_c),
         ps_ls[i] + ps_hs[i],
-        "b.",
-        ms=0.1,
+        "b-",
     )
 
 fig, axs = plt.subplots(1, nsr, layout="constrained")
@@ -122,8 +123,7 @@ for i, r in enumerate(reinforcement):
     axs[i].plot(
         ss_ls[i] / Es + ss_hs[i] / (Es * kappa_s),
         ss_ls[i] + ss_hs[i],
-        "b.",
-        ms=0.1,
+        "b-",
     )
 
 plt.show()
